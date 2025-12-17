@@ -8,7 +8,9 @@ import (
 type CompileCallback func(error)
 
 // Config holds the configuration for Go compilation
+// Config holds the configuration for Go compilation
 type Config struct {
+	AppRootDir                string               // eg: /abs/path/to/project
 	Command                   string               // eg: "go", "tinygo"
 	MainInputFileRelativePath string               // eg: web/main.server.go, web/main.wasm.go
 	OutName                   string               // eg: app, user, main.server

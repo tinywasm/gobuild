@@ -86,6 +86,14 @@ func (h *GoBuild) buildArguments(tempFileName string) []string {
 		buildArgs = append(buildArgs, "-ldflags="+strings.Join(ldFlags, " "))
 	}
 
-	buildArgs = append(buildArgs, "-o", path.Join(h.config.OutFolderRelativePath, tempFileName), h.config.MainInputFileRelativePath)
+	// Output path logic
+	var outputPath string
+	if path.IsAbs(tempFileName) || strings.HasPrefix(tempFileName, "/dev/") {
+		outputPath = tempFileName
+	} else {
+		outputPath = path.Join(h.config.OutFolderRelativePath, tempFileName)
+	}
+
+	buildArgs = append(buildArgs, "-o", outputPath, h.config.MainInputFileRelativePath)
 	return buildArgs
 }
