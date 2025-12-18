@@ -13,26 +13,17 @@ go get github.com/tinywasm/gobuild
 
 ## Quick Start
 
+Configuration is documented in [config.go](config.go).
+
 ```go
-type Config struct {
-    Command               string          // "go" or "tinygo"
-    MainInputFileRelativePath  string          // relative Path to main.go
-    OutName               string          // Output name (without extension)
-    Extension             string          // ".exe", ".wasm", ""
-    OutFolderRelativePath string          // relative Output directory
-    Logger                io.Writer       // Output writer (optional)
-    CompilingArguments    func() []string // Build arguments (optional)
-    Callback              func(error)     // Async callback (optional)
-    Timeout               time.Duration   // Default: 5s
-    Env                   []string        // Environment variables (optional)
-}
+// See config.go for full configuration options
 config := &Config{
     Command:                    "go",
     MainInputFileRelativePath:  "server/main.go",
     OutName:                    "app",
     Extension:                  ".exe",
     OutFolderRelativePath:      "dist",
-    Logger:                     os.Stdout,
+    Logger:                     func(msg ...any) { fmt.Println(msg...) },
     Timeout:                    5 * time.Second,
     Env:                        []string{"GOOS=js", "GOARCH=wasm"}, // For WASM compilation
 }
@@ -40,6 +31,7 @@ config := &Config{
 compiler := gobuild.New(config)
 err := compiler.CompileProgram() // Synchronous
 ```
+
 
 ## Async Compilation
 
@@ -69,16 +61,29 @@ if compiler.IsCompiling() {
 
 ## Methods
 
-- `CompileProgram() error` - Compile (sync/async based on callback)
+- `CompileProgram() error` - Compile to disk (sync/async based on callback)
+- `CompileToMemory() ([]byte, error)` - Compile to memory (returns byte slice, sync only)
 - `Cancel() error` - Cancel current compilation
 - `IsCompiling() bool` - Check if compilation is active
 - `MainOutputFileNameWithExtension() string` - Get output filename with extension (e.g., "main.wasm")
+
+## In-Memory Compilation
+
+```go
+// Compile directly to memory without writing to disk
+binary, err := compiler.CompileToMemory()
+if err != nil {
+    log.Fatal(err)
+}
+fmt.Printf("Compiled binary size: %d bytes\n", len(binary))
+```
 
 ## Features
 
 - **Thread-safe**: Automatic cancellation of previous compilations
 - **Unique temp files**: Prevents conflicts during concurrent builds
 - **Context-aware**: Proper cancellation and timeout handling
+- **In-memory**: Compile directly to memory slice without disk I/O
 
 ---
 ## [Contributing](https://github.com/tinywasm/cdvelop/blob/main/CONTRIBUTING.md)
