@@ -53,11 +53,12 @@ func (h *GoBuild) CompileToMemory() ([]byte, error) {
 	cmd := exec.CommandContext(ctx, h.config.Command, args...)
 	cmd.Dir = h.config.AppRootDir
 
-	// Environment variables
-	cmd.Env = os.Environ() // Inherit current env
-	// Add/Override env vars from config if any
-	// (gobuild.go doesn't seem to have explicit Env map in Config visible in previous view,
-	// assuming standard behavior or none for now based on viewed files)
+	// Environment variables - inherit current env and add config overrides
+	cmd.Env = os.Environ()
+	// Add/Override env vars from config (e.g., GOOS=js, GOARCH=wasm for WASM builds)
+	if len(h.config.Env) > 0 {
+		cmd.Env = append(cmd.Env, h.config.Env...)
+	}
 
 	// Capture Stdout
 	var wasmBuffer bytes.Buffer
