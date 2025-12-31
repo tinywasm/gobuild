@@ -3,6 +3,7 @@ package gobuild
 import (
 	"context"
 	"fmt"
+	"os"
 	"os/exec"
 	"path"
 	"sync"
@@ -11,11 +12,12 @@ import (
 
 // compilation represents an active compilation process
 type compilation struct {
-	cmd       *exec.Cmd
-	cancel    context.CancelFunc
-	done      chan error
-	tempFile  string
-	startTime time.Time
+	cmd         *exec.Cmd
+	cancel      context.CancelFunc
+	done        chan error
+	tempFile    string
+	startTime   time.Time
+	memoryBytes []byte // For in-memory compilations
 }
 
 // GoBuild represents a Go compiler instance
@@ -27,7 +29,7 @@ type GoBuild struct {
 	active          *compilation
 	outFileName     string // eg: main.exe, app
 	outTempFileName string // eg: app_temp.exe
-
+	binarySizer     *BinarySizer
 }
 
 // New creates a new GoBuild instance with the given configuration
@@ -37,11 +39,19 @@ func New(c *Config) *GoBuild {
 		c.Timeout = 5 * time.Second
 	}
 
-	return &GoBuild{
+	h := &GoBuild{
 		config:          c,
 		outFileName:     c.OutName + c.Extension,
 		outTempFileName: c.OutName + "_temp" + c.Extension,
 	}
+
+	// Initialize binary sizer with getBinaryBytes method
+	h.binarySizer = NewBinarySizer(h.getBinaryBytes)
+	if c.Logger != nil {
+		h.binarySizer.SetLog(c.Logger)
+	}
+
+	return h
 }
 
 // CompileProgram compiles the Go program
@@ -159,4 +169,29 @@ func (h *GoBuild) MainInputFileRelativePath() string {
 // eg: web/build/main.wasm
 func (h *GoBuild) FinalOutputPath() string {
 	return path.Join(h.config.OutFolderRelativePath, h.outFileName)
+}
+
+// getBinaryBytes reads and returns the compiled binary as bytes
+// First checks if there's a recent in-memory compilation, then falls back to disk
+// Returns nil if the binary cannot be obtained
+func (h *GoBuild) getBinaryBytes() []byte {
+	// Check if there's an in-memory compiled binary
+	h.mu.RLock()
+	if h.active != nil && len(h.active.memoryBytes) > 0 {
+		memBytes := h.active.memoryBytes
+		h.mu.RUnlock()
+		return memBytes
+	}
+	h.mu.RUnlock()
+
+	// Fallback to reading from disk
+	bytes, _ := os.ReadFile(h.FinalOutputPath())
+	return bytes
+}
+
+// BinarySize returns the compiled binary size in human-readable format
+// Returns format: "10.4 KB", "2.3 MB", "1.5 GB"
+// Returns "0.0 KB" if binary is unavailable
+func (h *GoBuild) BinarySize() string {
+	return h.binarySizer.BinarySize()
 }

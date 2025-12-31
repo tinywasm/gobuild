@@ -75,24 +75,37 @@ func (h *GoBuild) CompileToMemory() ([]byte, error) {
 
 	err := cmd.Run()
 
-	// Clean up active state
-	h.mu.Lock()
-	if h.active == comp {
-		h.active = nil
-	}
-	h.mu.Unlock()
-
 	if ctx.Err() == context.DeadlineExceeded {
+		// Clean up active state
+		h.mu.Lock()
+		if h.active == comp {
+			h.active = nil
+		}
+		h.mu.Unlock()
 		return nil, fmt.Errorf("compilation timed out after %v", h.config.Timeout)
 	}
 
 	if err != nil {
+		// Clean up active state
+		h.mu.Lock()
+		if h.active == comp {
+			h.active = nil
+		}
+		h.mu.Unlock()
 		return nil, fmt.Errorf("compilation failed: %w\nOutput: %s", err, stderrBuffer.String())
 	}
 
+	// Store compiled bytes in active compilation for BinarySize() access
+	compiledBytes := wasmBuffer.Bytes()
+	h.mu.Lock()
+	if h.active == comp {
+		h.active.memoryBytes = compiledBytes
+	}
+	h.mu.Unlock()
+
 	if h.config.Logger != nil {
-		h.config.Logger("Compilation to memory success. Size:", wasmBuffer.Len(), "bytes")
+		h.config.Logger("Compilation to memory success. Size:", len(compiledBytes), "bytes")
 	}
 
-	return wasmBuffer.Bytes(), nil
+	return compiledBytes, nil
 }

@@ -63,9 +63,11 @@ if compiler.IsCompiling() {
 
 - `CompileProgram() error` - Compile to disk (sync/async based on callback)
 - `CompileToMemory() ([]byte, error)` - Compile to memory (returns byte slice, sync only)
+- `BinarySize() string` - Get human-readable binary size (e.g., "2.1 MB", "10.4 KB")
 - `Cancel() error` - Cancel current compilation
 - `IsCompiling() bool` - Check if compilation is active
 - `MainOutputFileNameWithExtension() string` - Get output filename with extension (e.g., "main.wasm")
+- `FinalOutputPath() string` - Get full path to compiled binary (e.g., "web/build/main.wasm")
 
 ## In-Memory Compilation
 
@@ -75,7 +77,20 @@ binary, err := compiler.CompileToMemory()
 if err != nil {
     log.Fatal(err)
 }
-fmt.Printf("Compiled binary size: %d bytes\n", len(binary))
+
+// Get human-readable size (works with both disk and memory compilations)
+fmt.Printf("Binary size: %s (%d bytes)\n", compiler.BinarySize(), len(binary))
+// Output: Binary size: 2.1 MB (2254340 bytes)
+```
+
+## Binary Size Information
+
+```go
+// After CompileProgram() or CompileToMemory()
+size := compiler.BinarySize()
+fmt.Println("Compiled binary:", size) 
+// Examples: "10.4 KB", "2.3 MB", "1.5 GB"
+// Returns "0.0 KB" if binary is unavailable
 ```
 
 ## Features
@@ -84,6 +99,7 @@ fmt.Printf("Compiled binary size: %d bytes\n", len(binary))
 - **Unique temp files**: Prevents conflicts during concurrent builds
 - **Context-aware**: Proper cancellation and timeout handling
 - **In-memory**: Compile directly to memory slice without disk I/O
+- **Size reporting**: Human-readable binary size (KB, MB, GB) for both disk and memory compilations
 
 ---
-## [Contributing](https://github.com/tinywasm/cdvelop/blob/main/CONTRIBUTING.md)
+## [Contributing](https://github.com/cdvelop/cdvelop/blob/main/CONTRIBUTING.md)
