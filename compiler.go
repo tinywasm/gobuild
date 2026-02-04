@@ -32,6 +32,9 @@ func (h *GoBuild) compileSync(ctx context.Context, comp *compilation) error {
 	if err != nil {
 		// Emit a single log entry containing the error and the raw build output (no processing)
 		errMsg := fmt.Sprintf("%v build failed: %v", e, err)
+		if ctx.Err() == context.DeadlineExceeded {
+			errMsg = fmt.Sprintf("%v build timeout after %v: %v", e, h.config.Timeout, err)
+		}
 
 		if len(output) > 0 {
 			errMsg += " " + string(output)
