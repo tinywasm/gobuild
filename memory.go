@@ -69,10 +69,6 @@ func (h *GoBuild) CompileToMemory() ([]byte, error) {
 	var stderrBuffer bytes.Buffer
 	cmd.Stderr = &stderrBuffer
 
-	if h.config.Logger != nil {
-		h.config.Logger("Compiling to memory...")
-	}
-
 	err := cmd.Run()
 
 	if ctx.Err() == context.DeadlineExceeded {
@@ -102,10 +98,6 @@ func (h *GoBuild) CompileToMemory() ([]byte, error) {
 		h.active.memoryBytes = compiledBytes
 	}
 	h.mu.Unlock()
-
-	if h.config.Logger != nil {
-		h.config.Logger("Compilation to memory success. Size:", len(compiledBytes), "bytes")
-	}
 
 	return compiledBytes, nil
 }
