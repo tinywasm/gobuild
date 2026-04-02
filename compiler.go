@@ -18,8 +18,8 @@ func (h *GoBuild) compileSync(ctx context.Context, comp *compilation) error {
 
 	comp.cmd = exec.CommandContext(ctx, h.config.Command, buildArgs...)
 
-	// Set working directory to output folder for relative paths
-	comp.cmd.Dir = h.config.OutFolderRelativePath
+	// Set working directory to project root for relative paths resolution
+	comp.cmd.Dir = h.config.AppRootDir
 
 	// Set environment variables if provided
 	if len(h.config.Env) > 0 {
