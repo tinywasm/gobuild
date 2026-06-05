@@ -100,3 +100,7 @@ func (h *GoBuild) buildArguments(tempFileName string) []string {
 	buildArgs = append(buildArgs, "-o", outputPath, h.config.MainInputFileRelativePath)
 	return buildArgs
 }
+
+func DebugCompileInfo(h *GoBuild) string {
+	return "dummy"
+}
