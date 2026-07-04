@@ -11,6 +11,15 @@ import (
 )
 
 // compilation represents an active compilation process
+// Compiler defines the interface for a Go compiler.
+type Compiler interface {
+	CompileProgram() error
+	FinalOutputPath() string
+	UnobservedFiles() []string
+}
+
+var _ Compiler = (*GoBuild)(nil)
+
 type compilation struct {
 	cmd         *exec.Cmd
 	cancel      context.CancelFunc
